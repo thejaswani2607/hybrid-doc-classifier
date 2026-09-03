@@ -1,0 +1,31 @@
+# ============================================================
+# Document Classification Pipeline — Zero-Budget Dependencies
+# Everything here is free / open-source. No paid APIs except
+# the Gemini free-tier API (uses your own free API key).
+# ============================================================
+
+# --- CLI ---
+typer==0.12.5
+click==8.1.7              # pinned: newer click breaks typer 0.12.5's boolean flag handling
+rich==13.9.2
+
+# --- Text extraction ---
+pymupdf==1.24.11          # PDF text extraction (free, local)
+pytesseract==0.3.13       # OCR wrapper for Tesseract (free, local)
+                          # NOTE: requires the Tesseract binary installed on your OS separately.
+Pillow==10.4.0            # Image handling for OCR
+openpyxl==3.1.5           # used only for writing the Excel report, not reading input Excel files
+pandas>=2.2.0             # Tabular handling for reports (unpinned patch version so pip picks a version with a pre-built package for your Python)
+
+# --- Embeddings + Vector Search ---
+sentence-transformers==3.2.1   # all-MiniLM-L6-v2 embedding model (free, local)
+faiss-cpu==1.9.0                # local vector index (free, no hosted service)
+numpy>=1.26.4                   # unpinned patch version, same reason as pandas
+
+# --- Gemini free-tier API ---
+google-generativeai==0.8.3
+
+# --- Utilities ---
+python-dotenv==1.0.1
+tqdm==4.66.5
+pyyaml==6.0.2

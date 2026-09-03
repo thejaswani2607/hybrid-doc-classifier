@@ -1,0 +1,27 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data & generated artifacts (these can be large / personal — don't commit)
+store/train/*
+store/test/*
+!store/train/.gitkeep
+!store/test/.gitkeep
+!store/*/.gitkeep
+store/*/index.faiss
+store/*/metadata.json
+store/*/data_he_extractor.json
+store/*/extraction_warnings.txt
+extraction_cache/*
+!extraction_cache/.gitkeep
+classification_results/*
+!classification_results/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db

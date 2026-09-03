@@ -1,0 +1,130 @@
+# ==============================================================================
+# CLASSIFIER CONFIGURATION
+#
+# This file is the cleaned-up "classify_single_document" configuration block,
+# extracted from a production activities.yaml. Everything unrelated to
+# document classification (SLOS/Salesforce data-fetching, field mapping,
+# workflow fan-out, checklist/questionnaire processing) has been removed —
+# this file ONLY drives the classification pipeline in this project.
+#
+# Edit thresholds / classes here to tune the pipeline. No code changes needed.
+# ==============================================================================
+
+classifier_type: multi_layered
+
+# --- Core models ---
+embedding_model: "all-MiniLM-L6-v2"     # sentence-transformers model, free & local
+text_source: "he_extractor"             # matches the extractor in src/extraction/
+model_name: "gemini-3.5-flash-lite"     # overridden by GEMINI_MODEL in .env if set
+
+# --- Non-MLMC fallback thresholds (used only if you switch mode to rag_only /
+#     gemini_backed_rag instead of the default multi_layered / MLMC) ---
+similarity_threshold: 0.50
+reinforcement_threshold: 0.67
+always_reinforce: false
+top_k: 5
+max_pages: 20   # 0 = extract all pages, N = cap extraction at first N pages
+
+# --- Force-Gemini classes ---
+# Classes listed here ALWAYS get a Gemini opinion, even if RAG confidence is
+# already high. Useful for classes with high visual/text variance where RAG
+# alone has historically been unreliable. Set to an empty list ([]) to disable
+# this behaviour entirely and rely purely on the confidence threshold — good
+# for A/B testing whether force-listing actually helps your dataset.
+force_llm_classes:
+
+# ==============================================================================
+# LAYER 1 — top-level classification (standalone classes + bundle parents)
+# ==============================================================================
+
+# Bundle classes: a single uploaded file that stitches together multiple
+# sub-documents. When Layer 1 predicts one of these, Layer 2 splits the file
+# page-wise and re-classifies each page/section into one of the listed children.
+layer1_categories:
+  ITR_PL_STATEMENT_BALANCE_SHEET_CA_AUDIT_REPORT_BUNDLE:
+    children:
+      - class: "ITR"
+        allow_multiple: false
+      - class: "PROFIT_LOSS_STATEMENT"
+        allow_multiple: false
+      - class: "BALANCE_SHEET"
+        allow_multiple: false
+      - class: "CA_AUDIT_REPORT"
+        allow_multiple: false
+      - class: "UNKNOWN"
+        allow_multiple: false
+
+  MOA_AOA_COI_BUNDLE:
+    children:
+      - class: "AOA"
+        allow_multiple: false
+      - class: "MOA"
+        allow_multiple: false
+      - class: "COI"
+        allow_multiple: false
+      - class: "UNKNOWN"
+        allow_multiple: false
+
+# Standalone classes: final result at Layer 1, no further splitting.
+layer1_standalone:  
+  - "AADHAR_CARD"
+  - "AGRICULTURE_LAND_PROOF"
+  - "APPLICATION_FORM"
+  - "BANK_STATEMENT"
+  - "BIRTH_CERTIFICATE"
+  - "CIBIL_REPORT"
+  - "CKYC"
+  - "DATASUTRAM"
+  - "DIGILOCKER_OKYC"
+  - "DRIVING_LICENSE"
+  - "E_BILL"
+  - "FINBOX"
+  - "FLEET_LIST"
+  - "FORM_16"
+  - "GAS_BILL"
+  - "MANUAL_IBB"
+  - "MARRIAGE_CERTIFICATE"
+  - "NSDL_REPORT"
+  - "PAN_CARD"
+  - "PARTNERSHIP_DEED"
+  - "PERFOMA_INVOICE"
+  - "POSTPAID_MOBILE_BILL"
+  - "PROPERTY_TAX_RECEIPT"
+  - "REGISTRATION_CERTIFICATE"
+  - "RENT_AGREEMENT"
+  - "SALARY_SLIP"
+  - "SERVICE_ID"
+  - "SOA"
+  - "TELEPHONE_BILL"
+  - "UNKNOWN"
+  - "VAHAN_REPORT"
+  - "VOTER_ID"
+  - "WATER_BILL"
+  - "WORK_ORDER_AGREEMENT"
+
+layer1_use_rag: true
+layer1_use_gemini: true
+layer1_strategy: "rag_then_gemini"          # RAG first, Gemini only if needed
+layer1_rag_confidence_threshold: 0.74       # RAG confidence >= this => accept RAG result
+layer1_gemini_confidence_threshold: 0.67
+
+layer1_data_store: "store"
+layer1_index_file: "index.faiss"
+layer1_metadata_file: "metadata.json"
+layer1_version: "cl_v1"                     # must match the --version used in build-index
+layer1_top_k: 3
+
+# ==============================================================================
+# LAYER 2 — bundle child resolution (only triggered when Layer 1 -> a bundle)
+# ==============================================================================
+
+layer2_use_rag_hints: false
+layer2_use_gemini: true
+layer2_strategy: "gemini_only"
+layer2_max_classes: 20
+
+# ==============================================================================
+# LLM generation settings
+# ==============================================================================
+llm_generation_config:
+  temperature: 0

@@ -1,0 +1,107 @@
+# ==============================================================================
+# DOCUMENT CLASSES — TEMPLATE
+#
+# Rename this file to "document_classes.yaml" (or point CONFIG in .env to your
+# own path) and replace the entries below with your real classes.
+#
+# You already have a full document_classes.yaml from your original project —
+# just drop it in here as-is; this project reads the same schema:
+#
+#   name                              -> human-readable class name (display only)
+#   label                             -> the exact class label used everywhere
+#                                        else (folder names, layer1_standalone /
+#                                        layer1_categories in classifier_config.yaml
+#                                        MUST match this label exactly)
+#   group_name                        -> logical grouping (display only, optional)
+#   description                       -> IMPORTANT: this is fed directly into the
+#                                        Gemini prompt to help it distinguish this
+#                                        class from others. Be as specific as
+#                                        possible: POSITIVE signals (what this
+#                                        class DOES contain) and NEGATIVE signals
+#                                        (what it is commonly confused with, and
+#                                        why it's different).
+#   classification_confidence_threshold -> optional, per-class override (not
+#                                        currently enforced by this project's
+#                                        MLMC engine, kept for compatibility —
+#                                        global thresholds in classifier_config.yaml
+#                                        are what's actually used)
+#   extraction_class                  -> optional metadata tag, not used for
+#                                        classification itself
+#   is_mandatory                      -> optional metadata tag, not used for
+#                                        classification itself
+#
+# NOTE: output_schema / field-extraction blocks from your original YAML (used
+# for pulling structured fields like applicant name, dates, etc. out of a
+# classified document) are NOT used by this project — this project focuses
+# purely on CLASSIFICATION. They will simply be ignored if present in your
+# file, so you can safely paste your existing YAML in unmodified.
+# ==============================================================================
+
+- name: "Unknown"
+  label: "UNKNOWN"
+  group_name: "Others"
+  description: >
+    Default catch-all for documents that do not match any of the predefined
+    classes. Use only when no other class's decisive rule is satisfied.
+  classification_confidence_threshold: 0.85
+  extraction_class: ""
+  is_mandatory: false
+
+- name: "PAN Card"
+  label: "PAN_CARD"
+  group_name: "KYC Documents"
+  description: >
+    Indian Income Tax Department Permanent Account Number card. POSITIVES:
+    "INCOME TAX DEPARTMENT" header, "GOVT. OF INDIA" / Income Tax logo, a
+    10-character alphanumeric PAN number (format AAAAA9999A), applicant photo,
+    name, father's name, date of birth. NEGATIVES: not AADHAR_CARD (no UIDAI
+    logo / 12-digit Aadhaar number), not VOTER_ID (no Election Commission
+    banner). DECISIVE RULE: presence of the 10-character PAN number format
+    plus the Income Tax Department header.
+  classification_confidence_threshold: 0.85
+  extraction_class: "PAN_CARD"
+  is_mandatory: true
+
+- name: "Aadhar Card"
+  label: "AADHAR_CARD"
+  group_name: "KYC Documents"
+  description: >
+    UIDAI Aadhaar identity card/letter. POSITIVES: UIDAI logo/sun symbol,
+    12-digit Aadhaar number, "Government of India" text, address block, QR
+    code. NEGATIVES: not PAN_CARD (no 10-char alphanumeric PAN format), not
+    VOTER_ID (no ECI banner). DECISIVE RULE: 12-digit Aadhaar number plus
+    UIDAI branding.
+  classification_confidence_threshold: 0.85
+  extraction_class: "AADHAR_CARD"
+  is_mandatory: true
+
+- name: "Bank Statement"
+  label: "BANK_STATEMENT"
+  group_name: "Financial Documents"
+  description: >
+    A bank-issued account statement listing a running ledger of transactions
+    (date, description, debit, credit, balance) over a period, with bank
+    name/logo and account holder details. NEGATIVES: not SOA (Statement of
+    Account for a LOAN, showing EMI schedule, not deposit transactions), not
+    CIBIL_REPORT (credit bureau score report, not a bank account ledger).
+  classification_confidence_threshold: 0.85
+  extraction_class: "BANK_STATEMENT"
+  is_mandatory: false
+
+# --- Example BUNDLE class (must match a key in classifier_config.yaml's
+#     layer1_categories, and its children list) ---
+- name: "MOA, AOA and COI Bundle"
+  label: "MOA_AOA_COI_BUNDLE"
+  group_name: "Constitution Documents"
+  description: >
+    A single file that stitches together TWO OR MORE of: Certificate of
+    Incorporation (COI), Memorandum of Association (MOA), Articles of
+    Association (AOA). This is a CONTAINER label — when predicted, this
+    project's Layer 2 will split the file page-wise and re-classify each
+    section into COI / MOA / AOA individually.
+  classification_confidence_threshold: 0.85
+  extraction_class: ""
+  is_mandatory: false
+
+# ... add the rest of your real classes below (or paste your full existing
+# document_classes.yaml here in place of this template).
